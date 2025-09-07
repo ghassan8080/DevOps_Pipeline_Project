@@ -1,0 +1,98 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'us-east-2'
+        CLUSTER_NAME = 'microservice-cluster'
+        NAMESPACE = 'microservices'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/yourusername/DevOps-Pipeline.git', branch: 'main'
+            }
+        }
+
+        stage('Verify AWS Credentials') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'aws sts get-caller-identity'
+                }
+            }
+        }
+
+        stage('Check Existing Cluster') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    script {
+                        def clusterExists = sh(
+                            script: "aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}",
+                            returnStatus: true
+                        )
+                        if (clusterExists == 0) {
+                            echo "Cluster ${CLUSTER_NAME} already exists"
+                            env.CLUSTER_EXISTS = 'true'
+                        } else {
+                            echo "Cluster ${CLUSTER_NAME} does not exist"
+                            env.CLUSTER_EXISTS = 'false'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Create EKS Cluster') {
+            when {
+                environment name: 'CLUSTER_EXISTS', value: 'false'
+            }
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh """
+                        eksctl create cluster \
+                            --name ${CLUSTER_NAME} \
+                            --region ${AWS_REGION} \
+                            --node-type t3.medium \
+                            --nodes 2 \
+                            --nodes-min 1 \
+                            --nodes-max 3 \
+                            --with-oidc \
+                            --managed
+                    """
+                }
+            }
+        }
+
+        stage('Update Kubeconfig') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}'
+                }
+            }
+        }
+
+        stage('Create Namespace') {
+            steps {
+                sh 'kubectl apply -f kubernetes/namespace.yaml || true'
+            }
+        }
+
+        stage('Verify Cluster') {
+            steps {
+                sh """
+                    kubectl get nodes
+                    kubectl get namespaces
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'EKS Cluster created/verified successfully!'
+        }
+        failure {
+            echo 'EKS Cluster setup failed!'
+        }
+    }
+}

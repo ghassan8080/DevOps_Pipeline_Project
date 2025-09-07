@@ -1,0 +1,55 @@
+# Terraform
+.terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+
+# Ansible
+*.retry
+ansible/inventory/hosts
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Jenkins
+.jenkins/
+jenkins_home/
+
+# Kubernetes
+kubeconfig
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Local configuration
+.env
+*.env

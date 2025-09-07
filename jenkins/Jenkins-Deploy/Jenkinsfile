@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'us-east-2'
+        CLUSTER_NAME = 'microservice-cluster'
+        NAMESPACE = 'microservices'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/yourusername/DevOps-Pipeline.git', branch: 'main'
+            }
+        }
+
+        stage('Verify AWS Credentials') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'aws sts get-caller-identity'
+                }
+            }
+        }
+
+        stage('Update Kubeconfig') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}'
+                }
+            }
+        }
+
+        stage('Create Namespace') {
+            steps {
+                sh 'kubectl apply -f kubernetes/namespace.yaml'
+            }
+        }
+
+        stage('Deploy MySQL') {
+            steps {
+                sh 'kubectl apply -f kubernetes/mysql-deployment.yaml'
+            }
+        }
+
+        stage('Deploy PHP-Apache') {
+            steps {
+                sh 'kubectl apply -f kubernetes/php-apache-deployment.yaml'
+            }
+        }
+
+        stage('Deploy PHPMyAdmin') {
+            steps {
+                sh 'kubectl apply -f kubernetes/phpmyadmin-deployment.yaml'
+            }
+        }
+
+        stage('Deploy Prometheus') {
+            steps {
+                sh 'kubectl apply -f kubernetes/prometheus-deployment.yaml'
+            }
+        }
+
+        stage('Deploy Grafana') {
+            steps {
+                sh 'kubectl apply -f kubernetes/grafana-deployment.yaml'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh 'kubectl get all -n ${NAMESPACE}'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Applications deployed successfully!'
+        }
+        failure {
+            echo 'Application deployment failed!'
+        }
+    }
+}

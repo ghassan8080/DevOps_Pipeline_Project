@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: php-apache
+  template:
+    metadata:
+      labels:
+        app: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: php:8.1-apache
+        ports:
+        - containerPort: 80
+        env:
+        - name: MYSQL_HOST
+          value: "mysql-service"
+        - name: MYSQL_DATABASE
+          value: "appdb"
+        - name: MYSQL_USER
+          value: "root"
+        - name: MYSQL_PASSWORD
+          value: "rootpassword"
+        volumeMounts:
+        - name: php-apache-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: php-apache-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache-service
+  namespace: microservices
+spec:
+  selector:
+    app: php-apache
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP

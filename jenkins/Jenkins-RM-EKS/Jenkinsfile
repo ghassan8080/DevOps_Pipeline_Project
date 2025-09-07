@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'us-east-2'
+        CLUSTER_NAME = 'microservice-cluster'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/yourusername/DevOps-Pipeline.git', branch: 'main'
+            }
+        }
+
+        stage('Verify AWS Credentials') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'aws sts get-caller-identity'
+                }
+            }
+        }
+
+        stage('Delete EKS Cluster') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'eksctl delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'EKS Cluster deleted successfully!'
+        }
+        failure {
+            echo 'EKS Cluster deletion failed!'
+        }
+    }
+}
