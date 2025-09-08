@@ -4,27 +4,34 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-2'
         CLUSTER_NAME = 'microservice-cluster'
+        EKSCTL_PATH = "${WORKSPACE}/eksctl"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/ghassan8080/DevOps_Pipeline_Project.git', branch: 'main'
+                git url: 'https://github.com/ghassan8080/DevOps-Pipeline.git', branch: 'main'
             }
         }
 
-        stage('Verify AWS Credentials') {
+        stage('Install eksctl') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh 'aws sts get-caller-identity'
-                }
+                sh '''
+                    echo "=== Installing eksctl ==="
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    chmod +x /tmp/eksctl
+                    mv /tmp/eksctl ${EKSCTL_PATH}
+                '''
             }
         }
 
         stage('Delete EKS Cluster') {
             steps {
                 withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh 'eksctl delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}'
+                    sh '''
+                        echo "=== Deleting EKS Cluster ==="
+                        ${EKSCTL_PATH} delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}
+                    '''
                 }
             }
         }
