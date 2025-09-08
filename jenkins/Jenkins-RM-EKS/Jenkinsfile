@@ -1,41 +1,76 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'alpine/k8s:1.25.4'
+        }
+    }
 
     environment {
         AWS_REGION = 'us-east-2'
         CLUSTER_NAME = 'microservice-cluster'
+        KUBECONFIG = '/tmp/kubeconfig'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/ghassan8080/DevOps_Pipeline_Project.git', branch: 'main'
+                git url: 'https://github.com/ghassan8080/DevOps-Pipeline.git', branch: 'main'
             }
         }
 
-        stage('Verify AWS Credentials') {
+        stage('Verify Kubernetes Setup') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh 'aws sts get-caller-identity'
-                }
+                sh '''
+                    echo "=== Verifying kubectl installation ==="
+                    kubectl version --client
+                    echo "=== Verifying Kubernetes connection ==="
+                    kubectl cluster-info || echo "Cannot connect to cluster"
+                    echo "=== Listing available nodes ==="
+                    kubectl get nodes || echo "Cannot list nodes"
+                '''
             }
         }
 
-        stage('Delete EKS Cluster') {
+        stage('Clean Up Existing Resources') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh 'eksctl delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}'
-                }
+                sh '''
+                    echo "=== Removing existing deployments ==="
+                    kubectl delete deployment --all --ignore-not-found=true
+                '''
+            }
+        }
+
+        stage('Deploy Microservices') {
+            steps {
+                sh '''
+                    echo "=== Deploying microservices ==="
+                    # Add your deployment commands here
+                    kubectl apply -f kubernetes/namespace.yaml
+                    kubectl apply -f kubernetes/mysql-deployment.yaml
+                    kubectl apply -f kubernetes/php-apache-deployment.yaml
+                    kubectl apply -f kubernetes/phpmyadmin-deployment.yaml
+                '''
+            }
+        }
+
+        stage('Deploy Monitoring') {
+            steps {
+                sh '''
+                    echo "=== Deploying monitoring tools ==="
+                    # Add your monitoring deployment commands here
+                    kubectl apply -f kubernetes/prometheus-deployment.yaml
+                    kubectl apply -f kubernetes/grafana-deployment.yaml
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'EKS Cluster deleted successfully!'
+            echo 'Applications deployed successfully!'
         }
         failure {
-            echo 'EKS Cluster deletion failed!'
+            echo 'Application deployment failed!'
         }
     }
 }
