@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'heyvaldemar/aws-kubectl-docker:latest'
+            args '-u root' // Run as root to install packages if needed, and to write to /tmp
+        }
+    }
 
     environment {
         AWS_REGION = 'us-east-2'
@@ -19,6 +24,13 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'aws sts get-caller-identity'
                 }
+            }
+        }
+
+        stage('Install EKSCTL') {
+            steps {
+                sh 'curl -sL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp'
+                sh 'chmod +x /tmp/eksctl'
             }
         }
 
@@ -49,7 +61,7 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh """
-                        eksctl create cluster \
+                        /tmp/eksctl create cluster \
                             --name ${CLUSTER_NAME} \
                             --region ${AWS_REGION} \
                             --node-type t3.medium \
