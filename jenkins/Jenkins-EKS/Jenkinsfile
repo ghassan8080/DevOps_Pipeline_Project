@@ -16,7 +16,7 @@ pipeline {
 
         stage('Verify AWS Credentials') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([aws(credentials: 'aws-credentials', region: env.AWS_REGION)]) {
                     sh 'aws sts get-caller-identity'
                 }
             }
@@ -24,7 +24,7 @@ pipeline {
 
         stage('Check Existing Cluster') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([aws(credentials: 'aws-credentials', region: env.AWS_REGION)]) {
                     script {
                         def clusterExists = sh(
                             script: "aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}",
@@ -47,7 +47,7 @@ pipeline {
                 environment name: 'CLUSTER_EXISTS', value: 'false'
             }
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([aws(credentials: 'aws-credentials', region: env.AWS_REGION)]) {
                     sh """
                         eksctl create cluster \
                             --name ${CLUSTER_NAME} \
@@ -65,7 +65,7 @@ pipeline {
 
         stage('Update Kubeconfig') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([aws(credentials: 'aws-credentials', region: env.AWS_REGION)]) {
                     sh 'aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}'
                 }
             }
