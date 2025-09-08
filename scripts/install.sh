@@ -88,3 +88,12 @@ echo "kubectl version --client"
 echo "eksctl version"
 echo "ansible --version"
 echo "terraform --version"
+java -version
+docker --version
+docker-compose --version
+jenkins --version
+aws --version
+kubectl version --client
+eksctl version
+ansible --version
+terraform --version

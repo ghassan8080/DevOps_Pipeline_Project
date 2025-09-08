@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# scripts/fix-init-system-helpers.sh
+echo "🔧 إصلاح مشكلة init-system-helpers..."
+
+# تحديث النظام
+echo "📦 تحديث النظام..."
+sudo apt update
+
+# إضافة مستودع رسمي يحتوي على الإصدار الأحدث من init-system-helpers
+echo "🔍 إضافة مستودع يحتوي على إصدار أحدث من init-system-helpers..."
+
+# إضافة مستودع Ubuntu Main
+echo "📦 إضافة مستودع Ubuntu Main..."
+sudo apt-add-repository "deb http://us-east-2.ec2.archive.ubuntu.com/ubuntu/ bionic main" -y
+sudo apt update
+
+# تثبيت init-system-helpers من المستودر الرئيسي
+echo "🔧 تثبيت init-system-helpers من المستودع الرئيسي..."
+sudo apt install --only-upgrade init-system-helpers -y
+
+# التحقق من الإصدار الجديد
+echo "🔍 التحقق من الإصدار الجديد..."
+INSTALLED_VERSION=$(dpkg -l init-system-helpers | grep ii | awk '{print $3}')
+echo "الإصدار المثبت: $INSTALLED_VERSION"
+
+# إذا كان الإصدار لا يزال أقل من 1.54، جرب طريقة أخرى
+if [[ "$INSTALLED_VERSION" < "1.54" ]]; then
+    echo "⚠️ الإصدار لا يزال أقل من المطلوب، جرب طريقة أخرى..."
+
+    # جلب حزمة مباشرة من مستودع Ubuntu
+    cd /tmp
+    wget http://us-east-2.ec2.archive.ubuntu.com/ubuntu/pool/main/i/init-system-helpers/init-system-helpers_1.54~bpo8+1_all.deb
+    sudo dpkg -i init-system-helpers_1.54~bpo8+1_all.deb
+
+    # التحقق من الإصدار مرة أخرى
+    INSTALLED_VERSION=$(dpkg -l init-system-helpers | grep ii | awk '{print $3}')
+    echo "الإصدار الجديد: $INSTALLED_VERSION"
+fi
+
+# الآن حاول تثبيت Jenkins
+echo "👨‍💻 محاولة تثبيت Jenkins..."
+sudo apt install -y jenkins
+
+# التأكد من وجود مستخدم jenkins
+echo "👤 التأكد من وجود مستخدم jenkins..."
+if ! id "jenkins" &>/dev/null; then
+    echo "إنشاء مستخدم jenkins..."
+    sudo useradd -r -s /bin/false jenkins
+else
+    echo "مستخدم jenkins موجود بالفعل"
+fi
+
+# إنشاء ملفات Jenkins اللازمة
+echo "📝 إنشاء ملفات Jenkins اللازمة..."
+sudo mkdir -p /var/lib/jenkins /var/cache/jenkins /var/log/jenkins
+sudo chown -R jenkins:jenkins /var/lib/jenkins /var/cache/jenkins /var/log/jenkins
+
+# إنشاء ملف خدمة Jenkins
+echo "📝 إعداد خدمة Jenkins..."
+sudo tee /lib/systemd/system/jenkins.service > /dev/null <<EOL
+[Unit]
+Description=Jenkins Continuous Integration Server
+After=network.target
+
+[Service]
+User=jenkins
+Group=jenkins
+Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
+ExecStart=/usr/bin/java -jar /usr/share/jenkins/jenkins.war
+ExecReload=/bin/kill -HUP \$MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# إعادة تشغيل systemd
+echo "🔄 إعادة تشغيل systemd..."
+sudo systemctl daemon-reload
+
+# تعديل أذونات ملفات Jenkins
+echo "🔐 تعديل أذونات ملفات Jenkins..."
+sudo chown -R jenkins:jenkins /var/lib/jenkins
+sudo chown -R jenkins:jenkins /var/cache/jenkins
+sudo chown -R jenkins:jenkins /var/log/jenkins
+
+# تشغيل Jenkins
+echo "🚀 تشغيل Jenkins..."
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+# التحقق من حالة Jenkins
+echo "🔍 التحقق من حالة Jenkins..."
+sudo systemctl status jenkins
+
+# عرض كلمة المرور الأولية
+echo ""
+echo "📋 معلومات مهمة:"
+echo "1. كلمة مرور Jenkins الأولية:"
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword 2>/dev/null || echo "Jenkins لم يتم تشغيله بعد"
+echo "2. رابط Jenkins: http://$(curl -s ifconfig.me):8080"
