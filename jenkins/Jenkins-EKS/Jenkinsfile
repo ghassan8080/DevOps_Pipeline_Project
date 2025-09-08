@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'heyvaldemar/aws-kubectl-docker:latest'
-            args '-u root' // Run as root to install packages if needed, and to write to /tmp
-        }
-    }
+    agent any
 
     environment {
         AWS_REGION = 'us-east-2'
