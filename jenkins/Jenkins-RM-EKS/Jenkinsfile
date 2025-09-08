@@ -18,9 +18,13 @@ pipeline {
             steps {
                 sh '''
                     echo "=== Installing eksctl ==="
+                    # تحميل وفك ضغط eksctl
                     curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    # منح الصلاحيات والنقل إلى مسار العمل
                     chmod +x /tmp/eksctl
                     mv /tmp/eksctl ${EKSCTL_PATH}
+                    # التحقق من التثبيت
+                    ${EKSCTL_PATH} version
                 '''
             }
         }
@@ -30,7 +34,8 @@ pipeline {
                 withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
                     sh '''
                         echo "=== Deleting EKS Cluster ==="
-                        ${EKSCTL_PATH} delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION}
+                        # حذف المجموعة مع تجاهل الأخطاء إذا لم تكن المجموعة موجودة
+                        ${EKSCTL_PATH} delete cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --wait || echo "Cluster may not exist or already deleted"
                     '''
                 }
             }
