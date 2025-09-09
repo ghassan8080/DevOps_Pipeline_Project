@@ -175,8 +175,8 @@ pipeline {
         stage("Access Application") {
             steps {
                 echo "Node.js Monitoring App deployed successfully!"
-                echo "Access the application at: http://<node-app-service-url>"
-                echo "Access metrics at: http://<node-app-service-url>/metrics"
+                echo "Access the application at: http://<node-app-service-url>:8080"
+                echo "Access metrics at: http://<node-app-service-url>:8080/metrics"
             }
         }
     }

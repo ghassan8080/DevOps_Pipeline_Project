@@ -19,12 +19,12 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: your-docker-repo/node-monitoring-app:latest
+        image: k8s.gcr.io/echoserver:1.10
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
         env:
         - name: PORT
-          value: "3000"
+          value: "8080"
         resources:
           requests:
             memory: "128Mi"
@@ -35,16 +35,15 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
-        command: ["node", "-e", "console.log('Node.js app is running'); require('http').createServer((req, res) => { res.writeHead(200); res.end('Hello from Node.js!'); }).listen(3000);"]
 ---
 apiVersion: v1
 kind: Service
@@ -58,6 +57,6 @@ spec:
     app: node-app
   ports:
     - protocol: TCP
-      port: 3000
-      targetPort: 3000
+      port: 8080
+      targetPort: 8080
   type: ClusterIP
