@@ -108,16 +108,20 @@ pipeline {
 
         stage('Create Namespace') {
             steps {
-                sh 'kubectl apply -f kubernetes/namespace.yaml || true'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    sh 'kubectl apply -f kubernetes/namespace.yaml || true'
+                }
             }
         }
 
         stage('Verify Cluster') {
             steps {
-                sh """
-                    kubectl get nodes
-                    kubectl get namespaces
-                """
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    sh """
+                        kubectl get nodes
+                        kubectl get namespaces
+                    """
+                }
             }
         }
     }
