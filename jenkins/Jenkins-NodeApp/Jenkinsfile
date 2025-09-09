@@ -1,0 +1,157 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = "us-east-2"
+        CLUSTER_NAME = "microservice-cluster"
+        NAMESPACE = "microservices"
+        DOCKER_REGISTRY = "your-docker-registry.com"
+        DOCKER_IMAGE = "${DOCKER_REGISTRY}/node-monitoring-app:${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage("Checkout") {
+            steps {
+                git url: "https://github.com/ghassan8080/DevOps_Pipeline_Project.git", branch: "main"
+            }
+        }
+
+        stage("Install AWS CLI") {
+            steps {
+                sh "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\""
+                sh "unzip -o awscliv2.zip"
+                script {
+                    try {
+                        sh "./aws/install -i ${WORKSPACE}/aws-cli -b ${WORKSPACE}/aws-cli/bin"
+                    } catch (Exception e) {
+                        echo "AWS CLI already exists, updating..."
+                        sh "./aws/install --update -i ${WORKSPACE}/aws-cli -b ${WORKSPACE}/aws-cli/bin"
+                    }
+                    env.PATH = "${env.WORKSPACE}/aws-cli/bin:${env.PATH}"
+                }
+            }
+        }
+
+        stage("Install Kubectl") {
+            steps {
+                sh "curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\""
+                sh "chmod +x kubectl"
+                sh "mkdir -p ${WORKSPACE}/kubectl-bin"
+                sh "mv kubectl ${WORKSPACE}/kubectl-bin/"
+                script {
+                    env.PATH = "${env.WORKSPACE}/kubectl-bin:${env.PATH}"
+                }
+            }
+        }
+
+        stage("Install Docker") {
+            steps {
+                sh """
+                    # تثبيت Docker
+                    curl -fsSL https://get.docker.com -o get-docker.sh
+                    sh get-docker.sh
+                    # بدء خدمة Docker
+                    sudo systemctl start docker
+                    # إضافة المستخدم الحالي إلى مجموعة docker
+                    sudo usermod -aG docker $USER
+                    # التحقق من تثبيت Docker
+                    docker --version
+                """
+            }
+        }
+
+        stage("Verify AWS Credentials") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "aws sts get-caller-identity"
+                }
+            }
+        }
+
+        stage("Update Kubeconfig") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}"
+                }
+            }
+        }
+
+        stage("Build Docker Image") {
+            steps {
+                dir("node-app") {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage("Push Docker Image") {
+            steps {
+                script {
+                    // تسجيل الدخول إلى سجل Docker
+                    withCredentials([usernamePassword(credentialsId: "docker-registry-credentials", usernameVariable: "DOCKER_USER", passwordVariable: "DOCKER_PASSWORD")]) {
+                        sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+                    }
+                    // دفع الصورة إلى السجل
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
+            }
+        }
+
+        stage("Update Node App Deployment") {
+            steps {
+                script {
+                    // تحديث ملف النشر لاستخدام الصورة الجديدة
+                    sh "sed -i \"s|your-docker-repo/node-monitoring-app:latest|${DOCKER_IMAGE}|g\" kubernetes/node-app-deployment.yaml"
+                }
+            }
+        }
+
+        stage("Deploy Node App") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "kubectl apply -f kubernetes/node-app-deployment.yaml"
+                }
+            }
+        }
+
+        stage("Update Prometheus Configuration") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "kubectl apply -f kubernetes/prometheus-deployment.yaml"
+                }
+            }
+        }
+
+        stage("Verify Deployment") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "kubectl get pods -n ${NAMESPACE} | grep node-app"
+                    sh "kubectl get services -n ${NAMESPACE} | grep node-app"
+                }
+            }
+        }
+
+        stage("Access Application") {
+            steps {
+                echo "Node.js Monitoring App deployed successfully!"
+                echo "Access the application at: http://<node-app-service-url>"
+                echo "Access metrics at: http://<node-app-service-url>/metrics"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Node.js application deployed successfully!"
+        }
+        failure {
+            echo "Node.js application deployment failed!"
+        }
+        always {
+            echo "Pipeline completed!"
+            // تنظيف الموارد
+            sh "docker logout ${DOCKER_REGISTRY}"
+            sh "docker rmi ${DOCKER_IMAGE} || true"
+        }
+    }
+}
