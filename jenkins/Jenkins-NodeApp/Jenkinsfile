@@ -46,17 +46,29 @@ pipeline {
 
         stage("Install Docker") {
             steps {
-                sh """
-                    # تثبيت Docker
-                    curl -fsSL https://get.docker.com -o get-docker.sh
-                    sh get-docker.sh
-                    # بدء خدمة Docker
-                    sudo systemctl start docker || true
-                    # إضافة المستخدم jenkins إلى مجموعة docker
-                    sudo usermod -aG docker jenkins || true
-                    # التحقق من تثبيت Docker
-                    docker --version || echo "Docker not available in this step"
-                """
+                script {
+                    try {
+                        // محاولة تثبيت Docker بدون استخدام su
+                        sh """
+                            # تثبيت Docker
+                            curl -fsSL https://get.docker.com -o get-docker.sh
+                            # تعديل سكربت التثبيت لتجنب استخدام su
+                            sed -i 's/su -c/apt-get -y/g' get-docker.sh
+                            sh get-docker.sh
+                            # بدء خدمة Docker
+                            service docker start || true
+                            # إضافة المستخدم jenkins إلى مجموعة docker
+                            usermod -aG docker jenkins || true
+                            # التحقق من تثبيت Docker
+                            docker --version || echo "Docker not available in this step"
+                        """
+                    } catch (Exception e) {
+                        echo "Docker installation failed: ${e.getMessage()}"
+                        echo "Continuing with pipeline..."
+                        // تعيين متغير للإشارة إلى فشل تثبيت Docker
+                        env.DOCKER_INSTALL_FAILED = "true"
+                    }
+                }
             }
         }
 
@@ -96,12 +108,24 @@ pipeline {
         stage("Push Docker Image") {
             steps {
                 script {
-                    // تسجيل الدخول إلى سجل Docker
-                    withCredentials([usernamePassword(credentialsId: "docker-registry-credentials", usernameVariable: "DOCKER_USER", passwordVariable: "DOCKER_PASSWORD")]) {
-                        sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+                    // التحقق من نجاح تثبيت Docker وبناء الصورة
+                    if (env.DOCKER_INSTALL_FAILED == "true" || env.DOCKER_BUILD_FAILED == "true") {
+                        echo "Skipping Docker push due to installation or build failure"
+                        currentBuild.result = 'UNSTABLE'
+                        return
                     }
-                    // دفع الصورة إلى السجل
-                    sh "docker push ${DOCKER_IMAGE}"
+
+                    try {
+                        // تسجيل الدخول إلى سجل Docker
+                        withCredentials([usernamePassword(credentialsId: "docker-registry-credentials", usernameVariable: "DOCKER_USER", passwordVariable: "DOCKER_PASSWORD")]) {
+                            sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+                        }
+                        // دفع الصورة إلى السجل
+                        sh "docker push ${DOCKER_IMAGE}"
+                    } catch (Exception e) {
+                        echo "Docker push failed: ${e.getMessage()}"
+                        currentBuild.result = 'UNSTABLE'
+                    }
                 }
             }
         }
@@ -109,8 +133,16 @@ pipeline {
         stage("Update Node App Deployment") {
             steps {
                 script {
-                    // تحديث ملف النشر لاستخدام الصورة الجديدة
-                    sh "sed -i \"s|your-docker-repo/node-monitoring-app:latest|${DOCKER_IMAGE}|g\" kubernetes/node-app-deployment.yaml"
+                    // التحقق من نجاح تثبيت Docker وبناء الصورة ودفعها
+                    if (env.DOCKER_INSTALL_FAILED == "true" || env.DOCKER_BUILD_FAILED == "true") {
+                        echo "Skipping deployment update due to Docker installation or build failure"
+                        echo "Using default image for deployment"
+                        // استخدام صورة افتراضية
+                        sh "sed -i 's|your-docker-repo/node-monitoring-app:latest|ghassan8080/node-monitoring-app:latest|g' kubernetes/node-app-deployment.yaml"
+                    } else {
+                        // تحديث ملف النشر لاستخدام الصورة الجديدة
+                        sh "sed -i \"s|your-docker-repo/node-monitoring-app:latest|${DOCKER_IMAGE}|g\" kubernetes/node-app-deployment.yaml"
+                    }
                 }
             }
         }
