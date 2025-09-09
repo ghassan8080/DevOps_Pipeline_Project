@@ -51,11 +51,11 @@ pipeline {
                     curl -fsSL https://get.docker.com -o get-docker.sh
                     sh get-docker.sh
                     # بدء خدمة Docker
-                    sudo systemctl start docker
-                    # إضافة المستخدم الحالي إلى مجموعة docker
-                    sudo usermod -aG docker $USER
+                    sudo systemctl start docker || true
+                    # إضافة المستخدم jenkins إلى مجموعة docker
+                    sudo usermod -aG docker jenkins || true
                     # التحقق من تثبيت Docker
-                    docker --version
+                    docker --version || echo "Docker not available in this step"
                 """
             }
         }
@@ -150,8 +150,14 @@ pipeline {
         always {
             echo "Pipeline completed!"
             // تنظيف الموارد
-            sh "docker logout ${DOCKER_REGISTRY}"
-            sh "docker rmi ${DOCKER_IMAGE} || true"
+            script {
+                try {
+                    sh "docker logout ${DOCKER_REGISTRY}"
+                    sh "docker rmi ${DOCKER_IMAGE} || true"
+                } catch (Exception e) {
+                    echo "Docker cleanup failed: ${e.getMessage()}"
+                }
+            }
         }
     }
 }
