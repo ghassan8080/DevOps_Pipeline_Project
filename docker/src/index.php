@@ -7,26 +7,186 @@ $dbname = "appdb";
 try {
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "<h1>تم الاتصال بقاعدة البيانات بنجاح!</h1>";
-    echo "<p>الوقت الحالي: " . date('Y-m-d H:i:s') . "</p>";
 
-    // Create a test table
-    $pdo->exec("CREATE TABLE IF NOT EXISTS test_table (
+    // Create a table for social media links if it doesn't exist
+    $pdo->exec("CREATE TABLE IF NOT EXISTS social_media (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        message VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        platform_name VARCHAR(50) NOT NULL,
+        platform_url VARCHAR(255) NOT NULL,
+        icon_class VARCHAR(100) NOT NULL,
+        display_order INT DEFAULT 0,
+        active BOOLEAN DEFAULT TRUE
     )");
 
-    // Insert test data
-    $pdo->exec("INSERT IGNORE INTO test_table (id, message) VALUES (1, 'مرحباً من PHP!')");
+    // Create a table for user profile if it doesn't exist
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_profile (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        profile_name VARCHAR(100) NOT NULL,
+        profile_title VARCHAR(255),
+        profile_bio TEXT,
+        profile_image_url VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
 
-    // Retrieve data
-    $stmt = $pdo->query("SELECT * FROM test_table");
-    echo "<h2>البيانات من قاعدة البيانات:</h2>";
-    while ($row = $stmt->fetch()) {
-        echo "<p>ID: " . $row['id'] . " - الرسالة: " . $row['message'] . " - التاريخ: " . $row['created_at'] . "</p>";
+    // Insert default profile if not exists
+    $stmt = $pdo->query("SELECT COUNT(*) FROM user_profile");
+    if ($stmt->fetchColumn() == 0) {
+        $pdo->exec("INSERT INTO user_profile (profile_name, profile_title, profile_bio, profile_image_url) 
+                   VALUES ('اسمك هنا', 'مطور ويب', 'مرحباً بك في صفحتي الشخصية', 'https://via.placeholder.com/150')");
     }
+
+    // Insert default social media links if not exists
+    $stmt = $pdo->query("SELECT COUNT(*) FROM social_media");
+    if ($stmt->fetchColumn() == 0) {
+        $social_platforms = [
+            ['فيسبوك', 'https://facebook.com/yourprofile', 'fab fa-facebook', 1],
+            ['تويتر', 'https://twitter.com/yourprofile', 'fab fa-twitter', 2],
+            ['انستغرام', 'https://instagram.com/yourprofile', 'fab fa-instagram', 3],
+            ['لينكدإن', 'https://linkedin.com/in/yourprofile', 'fab fa-linkedin', 4],
+            ['يوتيوب', 'https://youtube.com/yourchannel', 'fab fa-youtube', 5]
+        ];
+
+        foreach ($social_platforms as $platform) {
+            $pdo->prepare("INSERT INTO social_media (platform_name, platform_url, icon_class, display_order) 
+                          VALUES (?, ?, ?, ?)")->execute($platform);
+        }
+    }
+
+    // Get user profile
+    $stmt = $pdo->query("SELECT * FROM user_profile LIMIT 1");
+    $profile = $stmt->fetch();
+
+    // Get social media links
+    $stmt = $pdo->query("SELECT * FROM social_media WHERE active = TRUE ORDER BY display_order");
+    $social_links = $stmt->fetchAll();
+
 } catch(PDOException $e) {
     echo "<h1>خطأ في الاتصال: " . $e->getMessage() . "</h1>";
+    die();
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحتي الشخصية</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .profile-card {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            border: 5px solid #e9ecef;
+        }
+        .profile-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #343a40;
+            margin-bottom: 10px;
+        }
+        .profile-title {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        .profile-bio {
+            font-size: 1rem;
+            color: #495057;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #343a40;
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .social-link:hover {
+            transform: translateY(-5px);
+            color: white;
+        }
+        .facebook:hover { background-color: #3b5998; }
+        .twitter:hover { background-color: #1da1f2; }
+        .instagram:hover { background-color: #e1306c; }
+        .linkedin:hover { background-color: #0077b5; }
+        .youtube:hover { background-color: #ff0000; }
+
+        .db-status {
+            background-color: #d4edda;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-card">
+            <div class="db-status">
+                <i class="fas fa-check-circle"></i> تم الاتصال بقاعدة البيانات بنجاح!
+                <span class="float-start"><?php echo date('Y-m-d H:i:s'); ?></span>
+            </div>
+
+            <img src="<?php echo htmlspecialchars($profile['profile_image_url']); ?>" alt="الصورة الشخصية" class="profile-image">
+
+            <h1 class="profile-name"><?php echo htmlspecialchars($profile['profile_name']); ?></h1>
+
+            <p class="profile-title"><?php echo htmlspecialchars($profile['profile_title']); ?></p>
+
+            <p class="profile-bio"><?php echo nl2br(htmlspecialchars($profile['profile_bio'])); ?></p>
+
+            <h3>تابعني على مواقع التواصل الاجتماعي</h3>
+
+            <div class="social-links">
+                <?php foreach ($social_links as $link): ?>
+                    <a href="<?php echo htmlspecialchars($link['platform_url']); ?>" 
+                       target="_blank" 
+                       class="social-link <?php echo strtolower(htmlspecialchars($link['platform_name'])); ?>"
+                       title="<?php echo htmlspecialchars($link['platform_name']); ?>">
+                        <i class="<?php echo htmlspecialchars($link['icon_class']); ?>"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

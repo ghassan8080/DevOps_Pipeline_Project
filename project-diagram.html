@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مخطط مشروع DevOps Pipeline</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .diagram-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .diagram-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .pipeline-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .pipeline-stage {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stage-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #343a40;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stage-icon {
+            font-size: 2rem;
+            color: #0d6efd;
+        }
+        .stage-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .tool-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            min-width: 200px;
+            border-left: 4px solid #0d6efd;
+        }
+        .tool-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0d6efd;
+        }
+        .tool-desc {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .arrow-connector {
+            text-align: center;
+            font-size: 2rem;
+            color: #0d6efd;
+            margin: 10px 0;
+        }
+        .project-info {
+            background-color: #e7f3ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="diagram-header">
+            <h1>مخطط مشروع DevOps Pipeline</h1>
+            <p class="lead">نظرة عامة على الأدوات المستخدمة وتكاملها في المشروع</p>
+        </div>
+
+        <div class="pipeline-flow">
+            <!-- مرحلة التطوير والتحكم بالإصدارات -->
+            <div class="pipeline-stage">
+                <div class="stage-title">
+                    <i class="fas fa-code stage-icon"></i>
+                    <span>مرحلة التطوير والتحكم بالإصدارات</span>
+                </div>
+                <div class="stage-content">
+                    <div class="tool-card">
+                        <div class="tool-title">Git</div>
+                        <div class="tool-desc">نظام التحكم بالإصدارات الموزع لتتبع التغييرات في الكود المصدري</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">PHP</div>
+                        <div class="tool-desc">لغة البرمجة المستخدمة في تطوير الواجهة الخلفية للتطبيق</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">HTML/CSS/JavaScript</div>
+                        <div class="tool-desc">تقنيات الواجهة الأمامية المستخدمة لتصميم واجهة مستخدم تفاعلية</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-connector">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <!-- مرحلة بناء التطبيق -->
+            <div class="pipeline-stage">
+                <div class="stage-title">
+                    <i class="fas fa-cogs stage-icon"></i>
+                    <span>مرحلة بناء التطبيق</span>
+                </div>
+                <div class="stage-content">
+                    <div class="tool-card">
+                        <div class="tool-title">Docker</div>
+                        <div class="tool-desc">منصة لتجميع التطبيقات في حاويات معزولة لتسهيل النشر والتشغيل</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">Dockerfile</div>
+                        <div class="tool-desc">ملف يحتوي على تعليمات لبناء صورة Docker للتطبيق</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">Docker Compose</div>
+                        <div class="tool-desc">أداة لتحديد وتشغيل تطبيقات Docker متعددة الحاويات</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-connector">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <!-- مرحلة الاختبار والنشر المستمر -->
+            <div class="pipeline-stage">
+                <div class="stage-title">
+                    <i class="fas fa-vial stage-icon"></i>
+                    <span>مرحلة الاختبار والنشر المستمر</span>
+                </div>
+                <div class="stage-content">
+                    <div class="tool-card">
+                        <div class="tool-title">Jenkins</div>
+                        <div class="tool-desc">خادم أتمتة يستخدم لبناء ونشر التطبيقات بشكل مستمر</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">Jenkinsfile</div>
+                        <div class="tool-desc">ملف نصي يحتوي على تعريف خطوط أنابيب Jenkins (Pipeline)</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">Test Scripts</div>
+                        <div class="tool-desc">نصوص برمجية لإجراء اختبارات آلية على التطبيق</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-connector">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <!-- مرحلة البنية التحتية -->
+            <div class="pipeline-stage">
+                <div class="stage-title">
+                    <i class="fas fa-server stage-icon"></i>
+                    <span>مرحلة البنية التحتية</span>
+                </div>
+                <div class="stage-content">
+                    <div class="tool-card">
+                        <div class="tool-title">Terraform</div>
+                        <div class="tool-desc">أداة لبناء وتغيير وإدارة البنية التحتية بشكل آمن وفعال</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">AWS</div>
+                        <div class="tool-desc">منصة سحابية توفر خدمات حوسبة وتخزين وغيرها</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">EKS</div>
+                        <div class="tool-desc">خدمة Kubernetes المدارة من Amazon لتشغيل الحاويات</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-connector">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <!-- مرحلة النشر والتشغيل -->
+            <div class="pipeline-stage">
+                <div class="stage-title">
+                    <i class="fas fa-rocket stage-icon"></i>
+                    <span>مرحلة النشر والتشغيل</span>
+                </div>
+                <div class="stage-content">
+                    <div class="tool-card">
+                        <div class="tool-title">Kubernetes</div>
+                        <div class="tool-desc">منصة لأتمتة نشر التطبيقات وتوسيعها وإدارتها</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">MySQL</div>
+                        <div class="tool-desc">نظام إدارة قواعد البيانات العلائقية</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">phpMyAdmin</div>
+                        <div class="tool-desc">أداة ويب لإدارة قواعد بيانات MySQL</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-title">Grafana & Prometheus</div>
+                        <div class="tool-desc">أدوات مراقبة وتجميع مقاييس الأداء</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="project-info">
+            <h3>معلومات المشروع</h3>
+            <p>هذا المشروع هو تطبيق ويب بسيط يستخدم PHP و MySQL مع واجهة مستخدم تفاعلية تحتوي على صورة شخصية وروابط لمواقع التواصل الاجتماعي. يتم نشر التطبيق باستخدام Kubernetes على Amazon EKS، ويتم إدارة البنية التحتية باستخدام Terraform. يتم أتمتة عملية البناء والنشر باستخدام Jenkins.</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
