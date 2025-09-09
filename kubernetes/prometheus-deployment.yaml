@@ -71,3 +71,6 @@ data:
       - job_name: 'mysql'
         static_configs:
           - targets: ['mysql-service:3306']
+      - job_name: 'node-app'
+        static_configs:
+          - targets: ['node-app-service:3000']
