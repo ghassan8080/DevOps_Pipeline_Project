@@ -16,7 +16,7 @@ pipeline {
 
         stage('Verify AWS Credentials') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'aws sts get-caller-identity'
                 }
             }
@@ -24,7 +24,7 @@ pipeline {
 
         stage('Update Kubeconfig') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}'
                 }
             }
@@ -32,7 +32,7 @@ pipeline {
 
         stage('Create Namespace') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/namespace.yaml'
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
 
         stage('Deploy MySQL') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/mysql-deployment.yaml'
                 }
             }
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Deploy PHP-Apache') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/php-apache-deployment.yaml'
                 }
             }
@@ -56,7 +56,7 @@ pipeline {
 
         stage('Deploy PHPMyAdmin') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/phpmyadmin-deployment.yaml'
                 }
             }
@@ -64,7 +64,7 @@ pipeline {
 
         stage('Deploy Prometheus') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/prometheus-deployment.yaml'
                 }
             }
@@ -72,7 +72,7 @@ pipeline {
 
         stage('Deploy Grafana') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl apply -f kubernetes/grafana-deployment.yaml'
                 }
             }
@@ -80,7 +80,7 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     sh 'kubectl get all -n ${NAMESPACE}'
                 }
             }
