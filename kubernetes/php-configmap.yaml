@@ -179,6 +179,12 @@ data:
 
                 <h3>تابعني على مواقع التواصل الاجتماعي</h3>
 
+                <div class="mt-4 mb-4">
+                    <a href="/project-diagram.html" class="btn btn-primary">
+                        <i class="fas fa-project-diagram me-2"></i> عرض مخطط المشروع
+                    </a>
+                </div>
+
                 <div class="social-links">
                     <?php foreach ($social_links as $link): ?>
                         <a href="<?php echo htmlspecialchars($link['platform_url']); ?>" 
