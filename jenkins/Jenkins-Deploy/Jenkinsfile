@@ -32,43 +32,57 @@ pipeline {
 
         stage('Create Namespace') {
             steps {
-                sh 'kubectl apply -f kubernetes/namespace.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/namespace.yaml'
+                }
             }
         }
 
         stage('Deploy MySQL') {
             steps {
-                sh 'kubectl apply -f kubernetes/mysql-deployment.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/mysql-deployment.yaml'
+                }
             }
         }
 
         stage('Deploy PHP-Apache') {
             steps {
-                sh 'kubectl apply -f kubernetes/php-apache-deployment.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/php-apache-deployment.yaml'
+                }
             }
         }
 
         stage('Deploy PHPMyAdmin') {
             steps {
-                sh 'kubectl apply -f kubernetes/phpmyadmin-deployment.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/phpmyadmin-deployment.yaml'
+                }
             }
         }
 
         stage('Deploy Prometheus') {
             steps {
-                sh 'kubectl apply -f kubernetes/prometheus-deployment.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/prometheus-deployment.yaml'
+                }
             }
         }
 
         stage('Deploy Grafana') {
             steps {
-                sh 'kubectl apply -f kubernetes/grafana-deployment.yaml'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl apply -f kubernetes/grafana-deployment.yaml'
+                }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh 'kubectl get all -n ${NAMESPACE}'
+                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
+                    sh 'kubectl get all -n ${NAMESPACE}'
+                }
             }
         }
     }
