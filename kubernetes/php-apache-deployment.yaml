@@ -28,11 +28,12 @@ spec:
         - name: MYSQL_PASSWORD
           value: "rootpassword"
         volumeMounts:
-        - name: php-apache-storage
+        - name: php-app-volume
           mountPath: /var/www/html
       volumes:
-      - name: php-apache-storage
-        emptyDir: {}
+      - name: php-app-volume
+        configMap:
+          name: php-app-config
 ---
 apiVersion: v1
 kind: Service
