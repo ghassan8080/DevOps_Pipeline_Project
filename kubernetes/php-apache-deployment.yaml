@@ -18,6 +18,11 @@ spec:
         image: php:8.1-apache
         ports:
         - containerPort: 80
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            docker-php-ext-install pdo pdo_mysql mysqli
+            apache2-foreground
         env:
         - name: MYSQL_HOST
           value: "mysql-service"
