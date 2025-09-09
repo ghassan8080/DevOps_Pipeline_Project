@@ -5,7 +5,7 @@ pipeline {
         AWS_REGION = "us-east-2"
         CLUSTER_NAME = "microservice-cluster"
         NAMESPACE = "microservices"
-        DOCKER_REGISTRY = "your-docker-registry.com"
+        DOCKER_REGISTRY = "ghassan8080"  // اسم مستخدم Docker Hub الخاص بك
         DOCKER_IMAGE = "${DOCKER_REGISTRY}/node-monitoring-app:${BUILD_NUMBER}"
     }
 
