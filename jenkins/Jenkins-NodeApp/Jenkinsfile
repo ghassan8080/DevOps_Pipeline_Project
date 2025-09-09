@@ -137,8 +137,8 @@ pipeline {
                     if (env.DOCKER_INSTALL_FAILED == "true" || env.DOCKER_BUILD_FAILED == "true") {
                         echo "Skipping deployment update due to Docker installation or build failure"
                         echo "Using default image for deployment"
-                        // استخدام صورة افتراضية
-                        sh "sed -i 's|your-docker-repo/node-monitoring-app:latest|ghassan8080/node-monitoring-app:latest|g' kubernetes/node-app-deployment.yaml"
+                        // استخدام صورة افتراضية متاحة
+                        sh "sed -i 's|your-docker-repo/node-monitoring-app:latest|node:alpine|g' kubernetes/node-app-deployment.yaml"
                     } else {
                         // تحديث ملف النشر لاستخدام الصورة الجديدة
                         sh "sed -i \"s|your-docker-repo/node-monitoring-app:latest|${DOCKER_IMAGE}|g\" kubernetes/node-app-deployment.yaml"
