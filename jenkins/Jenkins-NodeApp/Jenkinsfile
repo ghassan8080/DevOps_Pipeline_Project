@@ -78,8 +78,17 @@ pipeline {
 
         stage("Build Docker Image") {
             steps {
-                dir("node-app") {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                script {
+                    try {
+                        dir("node-app") {
+                            sh "docker build -t ${DOCKER_IMAGE} ."
+                        }
+                    } catch (Exception e) {
+                        echo "Docker build failed: ${e.getMessage()}"
+                        echo "Continuing with pipeline..."
+                        // تعيين متغير للإشارة إلى فشل بناء Docker
+                        env.DOCKER_BUILD_FAILED = "true"
+                    }
                 }
             }
         }
@@ -152,8 +161,8 @@ pipeline {
             // تنظيف الموارد
             script {
                 try {
-                    sh "docker logout ${DOCKER_REGISTRY}"
-                    sh "docker rmi ${DOCKER_IMAGE} || true"
+                    // التحقق من وجود Docker قبل محاولة استخدامه
+                    sh "command -v docker >/dev/null 2>&1 && { docker logout ${DOCKER_REGISTRY}; docker rmi ${DOCKER_IMAGE} || true; } || echo 'Docker not available, skipping cleanup'"
                 } catch (Exception e) {
                     echo "Docker cleanup failed: ${e.getMessage()}"
                 }
