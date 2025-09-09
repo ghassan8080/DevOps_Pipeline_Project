@@ -14,6 +14,34 @@ pipeline {
             }
         }
 
+        stage('Install AWS CLI') {
+            steps {
+                sh 'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"'
+                sh 'unzip -o awscliv2.zip'
+                script {
+                    try {
+                        sh './aws/install -i ${WORKSPACE}/aws-cli -b ${WORKSPACE}/aws-cli/bin'
+                    } catch (Exception e) {
+                        echo "AWS CLI already exists, updating..."
+                        sh './aws/install --update -i ${WORKSPACE}/aws-cli -b ${WORKSPACE}/aws-cli/bin'
+                    }
+                    env.PATH = "${env.WORKSPACE}/aws-cli/bin:${env.PATH}"
+                }
+            }
+        }
+
+        stage('Install Kubectl') {
+            steps {
+                sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
+                sh 'chmod +x kubectl'
+                sh 'mkdir -p ${WORKSPACE}/kubectl-bin'
+                sh 'mv kubectl ${WORKSPACE}/kubectl-bin/'
+                script {
+                    env.PATH = "${env.WORKSPACE}/kubectl-bin:${env.PATH}"
+                }
+            }
+        }
+
         stage('Verify AWS Credentials') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
