@@ -5,7 +5,47 @@
 ## هيكل المشروع
 
 ```
-├── docker/ │   ├── Dockerfile │   ├── docker-compose.yml │   └── src/ │       └── index.php ├── ansible/ │   └── playbook.yml ├── kubernetes/ │   ├── namespace.yaml │   ├── mysql-deployment.yaml │   ├── php-apache-deployment.yaml │   ├── phpmyadmin-deployment.yaml │   ├── prometheus-deployment.yaml │   └── grafana-deployment.yaml ├── terraform/ │   ├── main.tf │   ├── variables.tf │   ├── terraform.tfvars │   └── outputs.tf ├── jenkins/ │   ├── Jenkins-EKS/Jenkinsfile │   ├── Jenkins-Deploy/Jenkinsfile │   └── Jenkins-RM-EKS/Jenkinsfile ├── scripts/ │   └── install.sh └── README.md 
+├── docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── src/
+│       └── index.php
+├── ansible/
+│   └── playbook.yml
+├── kubernetes/
+│   ├── namespace.yaml
+│   ├── mysql-deployment.yaml
+│   ├── php-apache-deployment.yaml
+│   ├── phpmyadmin-deployment.yaml
+│   ├── prometheus-deployment.yaml
+│   ├── grafana-deployment.yaml
+│   ├── node-app-deployment.yaml
+│   ├── node-app-configmap.yaml
+│   ├── simple-node-app-deployment.yaml
+│   ├── simple-node-app-configmap.yaml
+│   ├── node-exporter-deployment.yaml
+│   ├── alertmanager-deployment.yaml
+│   ├── grafana-config.yaml
+│   ├── grafana-dashboard-import.yaml
+│   └── monitoring-ingress.yaml
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── jenkins/
+│   ├── Jenkins-EKS/Jenkinsfile
+│   ├── Jenkins-Deploy/Jenkinsfile
+│   ├── Jenkins-NodeApp/Jenkinsfile
+│   └── Jenkins-RM-EKS/Jenkinsfile
+├── node-app/
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── app.js
+│   └── package.json
+├── scripts/
+│   ├── deploy-monitoring.sh
+│   └── install.sh
+└── README.md
 ```
 
 ## خطوات التشغيل
@@ -37,9 +77,10 @@ chmod +x scripts/install.sh
 - أضف Credentials للـ AWS, DockerHub, GitHub
 
 5. إنشاء Jenkins Jobs
-- قم بإنشاء 3 pipeline jobs:
+- قم بإنشاء 4 pipeline jobs:
   - Jenkins-EKS: لإنشاء EKS cluster
   - Jenkins-Deploy: لنشر التطبيقات
+  - Jenkins-NodeApp: لنشر تطبيق Node.js
   - Jenkins-RM-EKS: لحذف الـ cluster
 
 ## الاختبارات المطلوبة
@@ -60,4 +101,20 @@ kubectl get all -n microservices
 3. اختبار Jenkins Pipeline
 - تشغيل Jenkins-EKS job
 - تشغيل Jenkins-Deploy job
+- تشغيل Jenkins-NodeApp job
 - التحقق من النتائج
+
+## مراقبة التطبيق
+
+1. الوصول إلى Grafana
+- افتح http://<grafana-url>
+- سجل الدخول باستخدام admin/admin123
+- استعرض لوحات المراقبة المتاحة
+
+2. الوصول إلى Prometheus
+- افتح http://<prometheus-url>
+- استعرض المقاييس المتاحة
+
+3. الوصول إلى التطبيق
+- افتح http://<app-url>
+- اختبر وظائف التطبيق المختلفة
