@@ -24,9 +24,27 @@ spec:
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana
+        - name: grafana-config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+        - name: grafana-config
+          mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          subPath: datasources.yaml
+        - name: grafana-config
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+          subPath: dashboards.yaml
+        - name: grafana-dashboard-import
+          mountPath: /var/lib/grafana/dashboards/node-app-dashboard.json
+          subPath: node-app-dashboard.json
       volumes:
       - name: grafana-storage
         emptyDir: {}
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+      - name: grafana-dashboard-import
+        configMap:
+          name: grafana-dashboard-import
 ---
 apiVersion: v1
 kind: Service

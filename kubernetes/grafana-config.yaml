@@ -1,0 +1,52 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: microservices
+data:
+  grafana.ini: |
+    [auth]
+    disable_login_form = false
+    disable_signout_menu = false
+
+    [auth.anonymous]
+    enabled = false
+
+    [users]
+    default_theme = dark
+
+    [dashboards]
+    default_home_dashboard_path = /var/lib/grafana/dashboards/default.json
+
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      orgId: 1
+      url: http://prometheus-service:9090
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: false
+      jsonData:
+        timeInterval: 5s
+        queryTimeout: 60s
+        httpMethod: POST
+        tlsAuth: false
+        tlsAuthWithCACert: false
+
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards

@@ -219,6 +219,15 @@ pipeline {
                 echo "To get the Ingress Controller external IP, run: kubectl get svc ingress-nginx-controller -n ingress-nginx"
             }
         }
+
+        stage("Deploy Monitoring Dashboard") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "chmod +x scripts/deploy-monitoring.sh"
+                    sh "bash scripts/deploy-monitoring.sh"
+                }
+            }
+        }
     }
 
     post {
