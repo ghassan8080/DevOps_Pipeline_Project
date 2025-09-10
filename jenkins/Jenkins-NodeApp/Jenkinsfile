@@ -179,7 +179,7 @@ pipeline {
                     sh "kubectl create configmap prometheus-rules --from-file=alert_rules.yml=/dev/stdin --dry-run=client -o yaml > /tmp/prometheus-rules.yaml || true"
                     sh "kubectl apply -f /tmp/prometheus-rules.yaml || true"
                     // Update Prometheus using a simple approach
-                    sh "kubectl patch deployment prometheus -n microservices --type strategic-merge-patch -p '{\"spec\":{\"template\":{\"spec\":{\"volumes\":[{\"name\":\"prometheus-rules\",\"configMap\":{\"name\":\"prometheus-rules\"}}],\"containers\":[{\"name\":\"prometheus\",\"volumeMounts\":[{\"name\":\"prometheus-rules\",\"mountPath\":\"/etc/prometheus/rules\"}],\"args\":[\"--config.file=/etc/prometheus/prometheus.yml\",\"--storage.tsdb.path=/prometheus\",\"--web.console.libraries=/etc/prometheus/console_libraries\",\"--web.console.templates=/etc/prometheus/consoles\",\"--storage.tsdb.retention.time=200h\",\"--web.enable-lifecycle\",\"--rule.file=/etc/prometheus/rules/alert_rules.yml\"]}]}}}}'"
+                    sh "kubectl patch deployment prometheus -n microservices --type strategic  -p '{\"spec\":{\"template\":{\"spec\":{\"volumes\":[{\"name\":\"prometheus-rules\",\"configMap\":{\"name\":\"prometheus-rules\"}}],\"containers\":[{\"name\":\"prometheus\",\"volumeMounts\":[{\"name\":\"prometheus-rules\",\"mountPath\":\"/etc/prometheus/rules\"}],\"args\":[\"--config.file=/etc/prometheus/prometheus.yml\",\"--storage.tsdb.path=/prometheus\",\"--web.console.libraries=/etc/prometheus/console_libraries\",\"--web.console.templates=/etc/prometheus/consoles\",\"--storage.tsdb.retention.time=200h\",\"--web.enable-lifecycle\",\"--rule.file=/etc/prometheus/rules/alert_rules.yml\"]}]}}}}'"
                 }
             }
         }
