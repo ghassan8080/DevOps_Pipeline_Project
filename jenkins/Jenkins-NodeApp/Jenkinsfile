@@ -155,10 +155,44 @@ pipeline {
             }
         }
 
+        stage("Deploy Node Exporter") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "kubectl apply -f kubernetes/node-exporter-deployment.yaml"
+                }
+            }
+        }
+
+        stage("Deploy AlertManager") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    sh "kubectl apply -f kubernetes/alertmanager-deployment.yaml"
+                }
+            }
+        }
+
         stage("Update Prometheus Configuration") {
             steps {
                 withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
                     sh "kubectl apply -f kubernetes/prometheus-deployment.yaml"
+                    // Mount the rules configmap to Prometheus deployment
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/volumes/0", "value": {"name": "prometheus-rules", "configMap": {"name": "prometheus-rules"}}}]'"
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/2", "value": {"name": "prometheus-rules", "mountPath": "/etc/prometheus/rules"}}]'"
+                    // Update Prometheus args to include rules
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/5", "value": "--rule.file=/etc/prometheus/rules/alert_rules.yml"}]'"
+                }
+            }
+        }
+
+        stage("Deploy Ingress") {
+            steps {
+                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
+                    // Install NGINX Ingress Controller if not already installed
+                    sh "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml || echo 'Ingress Controller might already be installed'"
+                    // Apply our ingress configuration
+                    sh "kubectl apply -f kubernetes/monitoring-ingress.yaml"
+                    // Wait for ingress to be ready
+                    sh "kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=controller -n ingress-nginx --timeout=300s || echo 'Ingress Controller wait timeout, continuing...'"
                 }
             }
         }
@@ -168,6 +202,7 @@ pipeline {
                 withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
                     sh "kubectl get pods -n ${NAMESPACE} | grep node-app"
                     sh "kubectl get services -n ${NAMESPACE} | grep node-app"
+                    sh "kubectl get ingress -n ${NAMESPACE} | grep monitoring"
                 }
             }
         }
@@ -175,8 +210,13 @@ pipeline {
         stage("Access Application") {
             steps {
                 echo "Node.js Monitoring App deployed successfully!"
-                echo "Access the application at: http://<node-app-service-url>:3000"
-                echo "Access metrics at: http://<node-app-service-url>:3000/metrics"
+                echo "Access the application at: http://<ingress-controller-url>/"
+                echo "Access metrics at: http://<ingress-controller-url>/node-app/metrics"
+                echo "Access Prometheus at: http://<ingress-controller-url>/prometheus"
+                echo "Access Grafana at: http://<ingress-controller-url>/grafana"
+                echo "Access AlertManager at: http://<ingress-controller-url>/alertmanager"
+                echo "Note: Replace <ingress-controller-url> with your actual Ingress Controller external IP or domain name"
+                echo "To get the Ingress Controller external IP, run: kubectl get svc ingress-nginx-controller -n ingress-nginx"
             }
         }
     }

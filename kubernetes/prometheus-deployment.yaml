@@ -61,16 +61,133 @@ data:
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
+
+    # Alertmanager configuration
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager-service:9093
+
+    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+    rule_files:
+      - "alert_rules.yml"
+
     scrape_configs:
+      # Prometheus self-monitoring
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
-      - job_name: 'php-apache'
-        static_configs:
-          - targets: ['php-apache-service:80']
-      - job_name: 'mysql'
-        static_configs:
-          - targets: ['mysql-service:3306']
+
+      # Node Exporter for cluster nodes monitoring
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '(.*):10250'
+            replacement: '${1}:9100'
+            target_label: __address__
+            action: replace
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # Kubernetes pods monitoring
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+
+      # Node.js application monitoring
       - job_name: 'node-app'
         static_configs:
           - targets: ['node-app-service:3000']
+        metrics_path: /metrics
+        scrape_interval: 5s
+
+      # PHP-Apache monitoring
+      - job_name: 'php-apache'
+        static_configs:
+          - targets: ['php-apache-service:80']
+
+      # MySQL monitoring
+      - job_name: 'mysql'
+        static_configs:
+          - targets: ['mysql-service:3306']
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: microservices
+data:
+  alert_rules.yml: |
+    groups:
+    - name: node-app-alerts
+      rules:
+      - alert: NodeAppDown
+        expr: up{job="node-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js application is down"
+          description: "Node.js application has been down for more than 1 minute"
+
+      - alert: HighMemoryUsage
+        expr: node_app_system_memory_usage_bytes / 1024 / 1024 > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Node.js application memory usage is {{ $value }}MB"
+
+      - alert: HighCpuUsage
+        expr: node_app_system_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Node.js application CPU usage is {{ $value }}%"
+
+    - name: node-alerts
+      rules:
+      - alert: HighNodeMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on node {{ $labels.instance }}"
+          description: "Node memory usage is {{ $value }}%"
+
+      - alert: HighNodeCpuUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on node {{ $labels.instance }}"
+          description: "Node CPU usage is {{ $value }}%"
