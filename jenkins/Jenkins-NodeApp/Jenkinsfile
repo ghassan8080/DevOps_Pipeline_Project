@@ -175,11 +175,10 @@ pipeline {
             steps {
                 withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
                     sh "kubectl apply -f kubernetes/prometheus-deployment.yaml"
-                    // Mount the rules configmap to Prometheus deployment
-                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/volumes/0", "value": {"name": "prometheus-rules", "configMap": {"name": "prometheus-rules"}}}]'"
-                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/2", "value": {"name": "prometheus-rules", "mountPath": "/etc/prometheus/rules"}}]'"
-                    // Update Prometheus args to include rules
-                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/5", "value": "--rule.file=/etc/prometheus/rules/alert_rules.yml"}]'"
+                    // Create a script to properly patch the Prometheus deployment
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "prometheus-rules", "configMap": {"name": "prometheus-rules"}}}]'"
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/volumeMounts/-", "value": {"name": "prometheus-rules", "mountPath": "/etc/prometheus/rules"}}]'"
+                    sh "kubectl patch deployment prometheus -n microservices --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--rule.file=/etc/prometheus/rules/alert_rules.yml"}]'"
                 }
             }
         }
