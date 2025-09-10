@@ -53,7 +53,7 @@ pipeline {
                             # تثبيت Docker
                             curl -fsSL https://get.docker.com -o get-docker.sh
                             # تعديل سكربت التثبيت لتجنب استخدام su
-                            sed -i 's/su -c/apt-get -y/g' get-docker.sh
+                            sed -i 's|su -c|apt-get -y|g' get-docker.sh
                             sh get-docker.sh
                             # بدء خدمة Docker
                             service docker start || true
@@ -175,8 +175,8 @@ pipeline {
         stage("Access Application") {
             steps {
                 echo "Node.js Monitoring App deployed successfully!"
-                echo "Access the application at: http://<node-app-service-url>:8080"
-                echo "Access metrics at: http://<node-app-service-url>:8080/metrics"
+                echo "Access the application at: http://<node-app-service-url>:3000"
+                echo "Access metrics at: http://<node-app-service-url>:3000/metrics"
             }
         }
     }
