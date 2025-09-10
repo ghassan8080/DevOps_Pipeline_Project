@@ -16,6 +16,15 @@ kubectl apply -f kubernetes/node-app-deployment.yaml
 # تطبيق تحديثات Grafana
 kubectl apply -f kubernetes/grafana-deployment.yaml
 
+# حذف أي Ingress قديم قد يسبب تعارض
+echo "حذف أي Ingress قديم قد يسبب تعارض..."
+kubectl delete ingress monitoring-ingress -n microservices --ignore-not-found=true
+kubectl delete ingress node-app-root-ingress -n microservices --ignore-not-found=true
+
+# تطبيق Ingress المحدث
+echo "تطبيق Ingress المحدث..."
+kubectl apply -f kubernetes/monitoring-ingress.yaml
+
 # الانتظار حتى تصبح جميع القرون جاهزة
 echo "الانتظار حتى تصبح جميع القرون جاهزة..."
 kubectl wait --for=condition=ready pod -l app=node-app -n microservices --timeout=300s
@@ -42,3 +51,4 @@ echo "AlertManager: http://<ingress-controller-url>/alertmanager"
 echo "تم تطبيق جميع التغييرات بنجاح!"
 echo "لاستبدال <ingress-controller-url> بالعنوان الفعلي، قم بتشغيل:"
 echo "kubectl get svc ingress-nginx-controller -n ingress-nginx"
+
