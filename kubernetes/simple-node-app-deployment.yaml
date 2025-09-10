@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-app
+  name: simple-node-app
   namespace: microservices
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: node-app
+      app: simple-node-app
   template:
     metadata:
       labels:
-        app: node-app
+        app: simple-node-app
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
     spec:
       containers:
-      - name: node-app
+      - name: simple-node-app
         image: node:alpine
         command: ["/bin/sh", "-c"]
         args:
-        - "apk add --no-cache nodejs npm && mkdir -p /tmp/app && cp /app/app.js /tmp/app/ && cd /tmp/app && npm install express prom-client systeminformation && node app.js"
+        - "apk add --no-cache nodejs && mkdir -p /tmp/app && cp /app/app.js /tmp/app/ && cd /tmp/app && node app.js"
         ports:
         - containerPort: 3000
         env:
@@ -53,18 +53,18 @@ spec:
       volumes:
       - name: app-code
         configMap:
-          name: node-app-code
+          name: simple-node-app-code
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: node-app-service
+  name: simple-node-app-service
   namespace: microservices
   labels:
-    app: node-app
+    app: simple-node-app
 spec:
   selector:
-    app: node-app
+    app: simple-node-app
   ports:
     - protocol: TCP
       port: 3000
