@@ -189,10 +189,10 @@ pipeline {
                 withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: "aws-credentials"]]) {
                     // Install NGINX Ingress Controller if not already installed
                     sh "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml || echo 'Ingress Controller might already be installed'"
+                    // Wait for ingress controller to be ready before applying ingress rules
+                    sh "kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=controller -n ingress-nginx --timeout=300s || echo 'Ingress Controller wait timeout, continuing...'"
                     // Apply our ingress configuration
                     sh "kubectl apply -f kubernetes/monitoring-ingress.yaml"
-                    // Wait for ingress to be ready
-                    sh "kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=controller -n ingress-nginx --timeout=300s || echo 'Ingress Controller wait timeout, continuing...'"
                 }
             }
         }
