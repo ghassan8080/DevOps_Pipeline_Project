@@ -19,9 +19,19 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: ghassan8080/node-monitoring-app:latest
+        image: node:alpine
+        command: ["/bin/sh", "-c"]
+        args:
+        - "apk add --no-cache nodejs npm && npm install express prom-client systeminformation && cp /app/app.js /app/package.json /tmp/ && cd /tmp && npm install && node app.js"
         ports:
         - containerPort: 3000
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      volumes:
+      - name: app-code
+        configMap:
+          name: node-app-code
         env:
         - name: PORT
           value: "3000"

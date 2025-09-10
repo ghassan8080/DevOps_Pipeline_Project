@@ -30,12 +30,17 @@ spec:
           mountPath: /prometheus
         - name: prometheus-config
           mountPath: /etc/prometheus
+        - name: prometheus-rules
+          mountPath: /etc/prometheus/rules
       volumes:
       - name: prometheus-storage
         emptyDir: {}
       - name: prometheus-config
         configMap:
           name: prometheus-config
+      - name: prometheus-rules
+        configMap:
+          name: prometheus-rules
 ---
 apiVersion: v1
 kind: Service
