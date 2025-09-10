@@ -22,19 +22,15 @@ spec:
         image: node:alpine
         command: ["/bin/sh", "-c"]
         args:
-        - "apk add --no-cache nodejs npm && npm install express prom-client systeminformation && cp /app/app.js /app/package.json /tmp/ && cd /tmp && npm install && node app.js"
+        - "apk add --no-cache nodejs && mkdir -p /tmp/app && cp /app/app.js /tmp/app/ && cd /tmp/app && node app.js"
         ports:
         - containerPort: 3000
-        volumeMounts:
-        - name: app-code
-          mountPath: /app
-      volumes:
-      - name: app-code
-        configMap:
-          name: node-app-code
         env:
         - name: PORT
           value: "3000"
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
         resources:
           requests:
             memory: "128Mi"
@@ -54,6 +50,10 @@ spec:
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
+      volumes:
+      - name: app-code
+        configMap:
+          name: node-app-code
 ---
 apiVersion: v1
 kind: Service
